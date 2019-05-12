@@ -1,5 +1,5 @@
 # Keys
-.app/src/res/values/google_maps_api.xml
+.app/src/debug/res/values/google_maps_api.xml
 
 # Built application files
 /*/build/
