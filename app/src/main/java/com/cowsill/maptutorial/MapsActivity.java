@@ -12,6 +12,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
@@ -33,7 +34,6 @@ import java.util.ArrayList;
 public class MapsActivity extends FragmentActivity implements
         OnMapReadyCallback {
 
-    private LocationListener mLocationListener;
     private GeofencingClient mGeofencingClient;
     private GoogleMap mMap;
     private static final String TAG = "MapsActivity";
@@ -136,7 +136,7 @@ public class MapsActivity extends FragmentActivity implements
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
     }
 
-    class GeofenceCreationAsyncTask extends AsyncTask<Void, Void, Boolean> {
+    class GeofenceCreationAsyncTask extends AsyncTask<Void, Void, Void> {
 
         PendingIntent geofencePendingIntent;
 
@@ -147,7 +147,7 @@ public class MapsActivity extends FragmentActivity implements
         }
 
         @Override
-        protected Boolean doInBackground(Void... voids) {
+        protected Void doInBackground(Void... voids) {
 
             createGeofenceObjects();
 
@@ -160,6 +160,7 @@ public class MapsActivity extends FragmentActivity implements
                     getGeofencePendingIntent()).addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
                 public void onSuccess(Void aVoid) {
+                    Log.i(TAG, "onSuccess: Geofences added" );
                     Toast.makeText(
                             getApplicationContext(),
                             "Geofences successfully added",
@@ -185,9 +186,9 @@ public class MapsActivity extends FragmentActivity implements
             if(geofencePendingIntent != null){
                 return geofencePendingIntent;
             } else {
-                Intent intent = new Intent(getApplicationContext(),
+                Intent intent = new Intent(MapsActivity.this,
                         GeofenceTransitionsService.class);
-                geofencePendingIntent = PendingIntent.getService(getApplicationContext(),
+                geofencePendingIntent = PendingIntent.getService(MapsActivity.this,
                         0,
                         intent,
                         PendingIntent.FLAG_UPDATE_CURRENT);
@@ -211,8 +212,6 @@ public class MapsActivity extends FragmentActivity implements
             transitionEvents.add(Geofence.GEOFENCE_TRANSITION_ENTER);
             transitionEvents.add(Geofence.GEOFENCE_TRANSITION_EXIT);
 
-
-
             // Initialize geofences
             MyGeofence homeFence = new MyGeofence("Home",
                     43.252294,
@@ -223,15 +222,14 @@ public class MapsActivity extends FragmentActivity implements
                     );
 
             MyGeofence workFence = new MyGeofence("Work",
-                    43.238867,
+                    43.238864,
                     -79.848904,
-                    75,
+                    100,
                     Geofence.NEVER_EXPIRE,
                     transitionEvents);
 
 
             // Add geofences to master list
-
             mGeofenceList.add(homeFence.createGeofence());
             mGeofenceList.add(workFence.createGeofence());
 
