@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -14,6 +15,7 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
+
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingRequest;
@@ -23,11 +25,14 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+
 import java.util.ArrayList;
 
 
@@ -38,6 +43,7 @@ public class MapsActivity extends FragmentActivity implements
     private GoogleMap mMap;
     private static final String TAG = "MapsActivity";
     private ArrayList<Geofence> mGeofenceList;
+    private ArrayList<MyGeofence> mMyGeofenceList;
     public static final int PERMISSION_REQUEST_CODE = 1;
 
     private Marker mCurrentLocation;
@@ -144,6 +150,7 @@ public class MapsActivity extends FragmentActivity implements
         protected void onPreExecute() {
             // initialize geofence list before starting background task
             mGeofenceList = new ArrayList<>();
+            mMyGeofenceList = new ArrayList<>();
         }
 
         @Override
@@ -160,7 +167,7 @@ public class MapsActivity extends FragmentActivity implements
                     getGeofencePendingIntent()).addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
                 public void onSuccess(Void aVoid) {
-                    Log.i(TAG, "onSuccess: Geofences added" );
+                    Log.i(TAG, "onSuccess: Geofences added");
                     Toast.makeText(
                             getApplicationContext(),
                             "Geofences successfully added",
@@ -180,10 +187,16 @@ public class MapsActivity extends FragmentActivity implements
             return null;
         }
 
-        private PendingIntent getGeofencePendingIntent(){
+        @Override
+        protected void onPostExecute(Void aVoid) {
+
+            placeGeofencesOnMap();
+        }
+
+        private PendingIntent getGeofencePendingIntent() {
 
             // The PendingIntent is basically a singleton
-            if(geofencePendingIntent != null){
+            if (geofencePendingIntent != null) {
                 return geofencePendingIntent;
             } else {
                 Intent intent = new Intent(MapsActivity.this,
@@ -197,7 +210,7 @@ public class MapsActivity extends FragmentActivity implements
             return geofencePendingIntent;
         }
 
-        private GeofencingRequest getGeofencingRequest(){
+        private GeofencingRequest getGeofencingRequest() {
             GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
             builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
             builder.addGeofences(mGeofenceList);
@@ -205,7 +218,7 @@ public class MapsActivity extends FragmentActivity implements
             return builder.build();
         }
 
-       private void createGeofenceObjects(){
+        private void createGeofenceObjects() {
 
             // Create array of transition events
             ArrayList<Integer> transitionEvents = new ArrayList<>();
@@ -219,7 +232,7 @@ public class MapsActivity extends FragmentActivity implements
                     50,
                     Geofence.NEVER_EXPIRE,
                     transitionEvents
-                    );
+            );
 
             MyGeofence workFence = new MyGeofence("Work",
                     43.238864,
@@ -229,10 +242,41 @@ public class MapsActivity extends FragmentActivity implements
                     transitionEvents);
 
 
-            // Add geofences to master list
-            mGeofenceList.add(homeFence.createGeofence());
-            mGeofenceList.add(workFence.createGeofence());
+            // Add geofences to master lists
+            mMyGeofenceList.add(homeFence);
+            mMyGeofenceList.add(workFence);
 
-       }
+            for (MyGeofence geofence : mMyGeofenceList) {
+                mGeofenceList.add(geofence.createGeofence());
+            }
+
+        }
+    }
+
+    private void placeGeofencesOnMap() {
+
+        for (MyGeofence geofence : mMyGeofenceList) {
+            updateMap(geofence);
+            Log.i(TAG, "placeGeofencesOnMap: " + geofence.getRequestId());
+        }
+    }
+
+    private void updateMap(MyGeofence geofence) {
+
+        LatLng latLng = new LatLng(geofence.getLatitude(), geofence.getLongtitude());
+
+        Marker marker = mMap.addMarker(new MarkerOptions()
+                .position(latLng)
+                .title(geofence.getRequestId())
+        );
+
+        Circle circle = mMap.addCircle(new CircleOptions()
+                .center(latLng)
+                .radius(geofence.getRadius())
+                .strokeWidth(2)
+                .strokeColor(Color.BLUE)
+                .fillColor(Color.parseColor("#200084d3")) //#AARRGGBB AA = transparency
+                .visible(true)
+        );
     }
 }

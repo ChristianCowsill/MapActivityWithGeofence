@@ -4,7 +4,7 @@ import com.google.android.gms.location.Geofence;
 import java.util.ArrayList;
 
 
-public class MyGeofence implements Geofence {
+public class MyGeofence {
 
     private String requestId;
     private double latitude;
@@ -25,6 +25,8 @@ public class MyGeofence implements Geofence {
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
+
+    public String getRequestId(){ return requestId; }
 
     public double getLatitude() {
         return latitude;
@@ -50,10 +52,10 @@ public class MyGeofence implements Geofence {
         this.expirationDuration = expirationDuration;
     }
 
-    @Override
-    public String getRequestId() {
-        return null;
-    }
+    public float getRadius (){ return radius; }
+
+    public void setRadius(float radius){this.radius = radius; }
+
 
     public Geofence createGeofence(){
 
